@@ -1,8 +1,0 @@
-
-PHP - mysqli->real_escape_string()   
-
-ex: $mysqli->real_escape_string($city);
-
-XSS - htmlspecialchars() or strip_tags().
-1st will convert special chars like < to &lt; that will show up as <, but won't be executed. 
-2nd just strip all tags out.
