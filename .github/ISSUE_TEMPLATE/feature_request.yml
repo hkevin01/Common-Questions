@@ -1,0 +1,79 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! We appreciate your input.
+        
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: false
+      
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - New Content (tutorials, guides, examples)
+        - Code Examples (new languages, frameworks)
+        - Documentation Improvements
+        - Website/UI Enhancements
+        - Developer Tools/Scripts
+        - Testing/Quality Assurance
+        - Performance Improvements
+        - Other
+    validations:
+      required: true
+      
+  - type: checkboxes
+    id: content-areas
+    attributes:
+      label: Which content areas would this affect?
+      options:
+        - label: Coding Challenges
+        - label: Interview Questions
+        - label: Web Security
+        - label: Development Practices
+        - label: External Resources
+        - label: Project Infrastructure
+        
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context, mockups, or examples about the feature request here.
+    validations:
+      required: false
+      
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to help implement this feature
+        - label: I can provide content or examples for this feature
+        - label: I can help with testing this feature

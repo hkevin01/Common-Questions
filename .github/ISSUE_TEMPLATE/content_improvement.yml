@@ -1,0 +1,85 @@
+name: Content Improvement
+description: Suggest improvements to existing content
+title: "[Content]: "
+labels: ["content", "improvement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation and examples!
+        
+  - type: dropdown
+    id: content-type
+    attributes:
+      label: What type of content needs improvement?
+      options:
+        - Documentation/Guide
+        - Code Example
+        - External Link
+        - Explanation/Clarity
+        - Technical Accuracy
+        - Formatting/Style
+        - Other
+    validations:
+      required: true
+      
+  - type: input
+    id: content-location
+    attributes:
+      label: Content Location
+      description: Which file or section needs improvement?
+      placeholder: e.g., content/web-security/xss-prevention.md, section "Basic XSS Example"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: current-issue
+    attributes:
+      label: What's wrong with the current content?
+      description: Describe the issue with the existing content
+      placeholder: The current explanation is unclear because...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: suggested-improvement
+    attributes:
+      label: Suggested Improvement
+      description: How should the content be improved?
+      placeholder: |
+        Specific suggestions for improvement:
+        - Add more examples
+        - Clarify technical terms
+        - Fix code syntax
+        - Update outdated information
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      options:
+        - Low (minor improvement)
+        - Medium (notable improvement)
+        - High (important correction)
+        - Critical (incorrect information)
+    validations:
+      required: true
+      
+  - type: textarea
+    id: additional-resources
+    attributes:
+      label: Additional Resources
+      description: Any links, references, or examples that could help with the improvement
+    validations:
+      required: false
+      
+  - type: checkboxes
+    id: help-offer
+    attributes:
+      label: Contribution Offer
+      options:
+        - label: I can help write the improved content
+        - label: I can provide additional examples
+        - label: I can review the changes

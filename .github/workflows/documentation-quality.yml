@@ -1,0 +1,198 @@
+name: Documentation Quality Check
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  schedule:
+    # Run weekly to check for broken links
+    - cron: '0 0 * * 0'
+
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: markdownlint "**/*.md" --ignore node_modules --ignore .git
+
+  link-checker:
+    name: Check Links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Check links in markdown files
+        run: |
+          find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | \
+          xargs -I {} markdown-link-check {} --config .github/workflows/link-check-config.json
+
+  spell-check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install cspell
+        run: npm install -g cspell
+
+      - name: Run spell check
+        run: cspell "**/*.md" --config .github/workflows/cspell.json
+
+  validate-structure:
+    name: Validate Repository Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate directory structure
+        run: |
+          echo "Checking required directories..."
+          
+          required_dirs=(
+            "content/coding-challenges"
+            "content/interview-questions"
+            "content/web-security"
+            "content/development-practices"
+            "docs"
+            "examples"
+            "tests"
+            "resources"
+          )
+          
+          for dir in "${required_dirs[@]}"; do
+            if [ ! -d "$dir" ]; then
+              echo "❌ Missing required directory: $dir"
+              exit 1
+            else
+              echo "✅ Found directory: $dir"
+            fi
+          done
+
+      - name: Validate required files
+        run: |
+          echo "Checking required files..."
+          
+          required_files=(
+            "README.md"
+            "docs/projectplan.md"
+            "content/coding-challenges/fizzbuzz.md"
+            "content/coding-challenges/rosetta-code.md"
+            "content/interview-questions/personal-development.md"
+            "content/interview-questions/technical.md"
+            "content/web-security/sql-injection.md"
+            "content/web-security/xss-prevention.md"
+            "content/development-practices/tdd.md"
+            "resources/external-links.md"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            else
+              echo "✅ Found file: $file"
+            fi
+          done
+
+  validate-code-examples:
+    name: Validate Code Examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Extract and validate Python code
+        run: |
+          echo "Extracting Python code from markdown files..."
+          python3 .github/scripts/extract_and_validate_code.py python
+
+      - name: Extract and validate JavaScript code
+        run: |
+          echo "Extracting JavaScript code from markdown files..."
+          python3 .github/scripts/extract_and_validate_code.py javascript
+
+      - name: Extract and validate Java code
+        run: |
+          echo "Extracting Java code from markdown files..."
+          python3 .github/scripts/extract_and_validate_code.py java
+
+  generate-stats:
+    name: Generate Repository Statistics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate content statistics
+        run: |
+          echo "📊 Repository Statistics" > stats.md
+          echo "======================" >> stats.md
+          echo "" >> stats.md
+          
+          echo "### Content Overview" >> stats.md
+          echo "- **Markdown files**: $(find . -name '*.md' -not -path './.git/*' | wc -l)" >> stats.md
+          echo "- **Total lines**: $(find . -name '*.md' -not -path './.git/*' -exec cat {} \; | wc -l)" >> stats.md
+          echo "- **Code blocks**: $(grep -r '```' --include='*.md' . | wc -l)" >> stats.md
+          echo "" >> stats.md
+          
+          echo "### Directory Structure" >> stats.md
+          echo "\`\`\`" >> stats.md
+          tree -I '.git|node_modules' >> stats.md
+          echo "\`\`\`" >> stats.md
+          
+          echo "### Recent Updates" >> stats.md
+          echo "- **Last updated**: $(date)" >> stats.md
+          echo "- **Latest commit**: $(git log -1 --pretty=format:'%h - %s (%an, %ar)')" >> stats.md
+          
+          cat stats.md
+
+      - name: Upload statistics
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-stats
+          path: stats.md

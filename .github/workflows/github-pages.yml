@@ -1,0 +1,219 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+        
+      - name: Install dependencies
+        run: |
+          npm install -g @11ty/eleventy
+          npm install markdown-it markdown-it-anchor markdown-it-table-of-contents
+          
+      - name: Create Eleventy config
+        run: |
+          cat > .eleventy.js << 'EOF'
+          const markdownIt = require("markdown-it");
+          const markdownItAnchor = require("markdown-it-anchor");
+          const markdownItTOC = require("markdown-it-table-of-contents");
+          
+          module.exports = function(eleventyConfig) {
+            // Copy static assets
+            eleventyConfig.addPassthroughCopy("assets");
+            eleventyConfig.addPassthroughCopy("examples");
+            
+            // Configure Markdown
+            let markdownLibrary = markdownIt({
+              html: true,
+              breaks: true,
+              linkify: true
+            }).use(markdownItAnchor, {
+              permalink: markdownItAnchor.permalink.ariaHidden({
+                placement: "after",
+                class: "direct-link",
+                symbol: "#"
+              }),
+              level: [1,2,3,4],
+              slugify: eleventyConfig.getFilter("slug")
+            }).use(markdownItTOC, {
+              includeLevel: [1,2,3],
+              slug: eleventyConfig.getFilter("slug")
+            });
+            
+            eleventyConfig.setLibrary("md", markdownLibrary);
+            
+            // Set directories
+            return {
+              dir: {
+                input: ".",
+                includes: "_includes",
+                data: "_data",
+                output: "_site"
+              },
+              templateFormats: ["md", "njk", "html"],
+              markdownTemplateEngine: "njk",
+              htmlTemplateEngine: "njk"
+            };
+          };
+          EOF
+          
+      - name: Create base template
+        run: |
+          mkdir -p _includes
+          cat > _includes/base.njk << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{% if title %}{{ title }} - {% endif %}Common Questions</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                color: #333;
+              }
+              .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 10px;
+                margin-bottom: 2rem;
+                text-align: center;
+              }
+              .nav {
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                margin-bottom: 2rem;
+              }
+              .nav a {
+                text-decoration: none;
+                color: #495057;
+                margin-right: 1rem;
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+              }
+              .nav a:hover {
+                background-color: #e9ecef;
+              }
+              .content {
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              }
+              code {
+                background: #f8f9fa;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 0.9em;
+              }
+              pre {
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                overflow-x: auto;
+              }
+              .toc {
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+              }
+              .direct-link {
+                color: #999;
+                text-decoration: none;
+                margin-left: 0.5rem;
+              }
+              .direct-link:hover {
+                color: #667eea;
+              }
+            </style>
+          </head>
+          <body>
+            <header class="header">
+              <h1>{{ title or "Common Questions" }}</h1>
+              <p>Programming Interview & Development Resource Hub</p>
+            </header>
+            
+            <nav class="nav">
+              <a href="/">Home</a>
+              <a href="/content/coding-challenges/">Coding Challenges</a>
+              <a href="/content/interview-questions/">Interview Questions</a>
+              <a href="/content/web-security/">Web Security</a>
+              <a href="/content/development-practices/">Development Practices</a>
+              <a href="/resources/external-links/">Resources</a>
+            </nav>
+            
+            <main class="content">
+              {{ content | safe }}
+            </main>
+            
+            <footer style="text-align: center; margin-top: 2rem; padding: 1rem; color: #666;">
+              <p>&copy; {{ "now" | date: "%Y" }} Common Questions Project. Licensed under MIT.</p>
+            </footer>
+          </body>
+          </html>
+          EOF
+          
+      - name: Build site
+        run: |
+          # Create index page
+          cat > index.md << 'EOF'
+          ---
+          layout: base.njk
+          title: Home
+          ---
+          {% raw %}
+          {{ content }}
+          {% endraw %}
+          EOF
+          cat README.md >> index.md
+          
+          # Build with Eleventy
+          npx @11ty/eleventy
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

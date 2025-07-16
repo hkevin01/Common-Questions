@@ -1,0 +1,59 @@
+name: Content Improvement
+description: Suggest improvements to existing content
+title: "[Content]: "
+labels: ["content", "improvement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our content! 📚
+        
+  - type: input
+    id: content-location
+    attributes:
+      label: Content Location
+      description: Which file or section needs improvement?
+      placeholder: e.g., content/web-security/sql-injection.md
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: improvement-type
+    attributes:
+      label: Type of Improvement
+      description: What kind of improvement is this?
+      options:
+        - Accuracy/Correctness
+        - Clarity/Readability
+        - Code Examples
+        - Missing Information
+        - Outdated Information
+        - Formatting/Structure
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: current-content
+    attributes:
+      label: Current Content Issue
+      description: What's wrong with the current content?
+      placeholder: Describe the specific issue with the current content.
+    validations:
+      required: true
+      
+  - type: textarea
+    id: suggested-improvement
+    attributes:
+      label: Suggested Improvement
+      description: How should this be improved?
+      placeholder: Provide your suggested improvement or correction.
+    validations:
+      required: true
+      
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any additional context or references that support your suggestion?
+      placeholder: Links to authoritative sources, standards, or documentation.

@@ -1,0 +1,242 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm install -g @marp-team/marp-cli
+          npm install -g markdown-it markdown-it-anchor markdown-it-toc-done-right
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Generate static site
+        run: |
+          mkdir -p _site
+          
+          # Copy all markdown files to _site
+          find . -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*" | while read file; do
+            # Create directory structure in _site
+            dir=$(dirname "$file")
+            mkdir -p "_site$dir"
+            cp "$file" "_site$file"
+          done
+          
+          # Generate HTML index
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Common Questions - Programming Resource Hub</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 20px;
+                      background: #f8f9fa;
+                  }
+                  .header {
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 40px;
+                      border-radius: 10px;
+                      text-align: center;
+                      margin-bottom: 30px;
+                  }
+                  .content-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 20px;
+                      margin-bottom: 30px;
+                  }
+                  .content-card {
+                      background: white;
+                      padding: 20px;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                      transition: transform 0.2s ease;
+                  }
+                  .content-card:hover {
+                      transform: translateY(-2px);
+                  }
+                  .content-card h3 {
+                      color: #333;
+                      margin-top: 0;
+                  }
+                  .content-card ul {
+                      list-style: none;
+                      padding: 0;
+                  }
+                  .content-card li {
+                      margin: 8px 0;
+                  }
+                  .content-card a {
+                      color: #667eea;
+                      text-decoration: none;
+                      font-weight: 500;
+                  }
+                  .content-card a:hover {
+                      text-decoration: underline;
+                  }
+                  .footer {
+                      text-align: center;
+                      margin-top: 40px;
+                      padding: 20px;
+                      color: #666;
+                  }
+                  .emoji {
+                      font-size: 1.2em;
+                      margin-right: 8px;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🚀 Common Questions</h1>
+                  <p>Programming Interview & Development Resource Hub</p>
+                  <p>A comprehensive collection of programming questions, solutions, and best practices</p>
+              </div>
+              
+              <div class="content-grid">
+                  <div class="content-card">
+                      <h3><span class="emoji">🧩</span>Coding Challenges</h3>
+                      <ul>
+                          <li><a href="content/coding-challenges/fizzbuzz.md">FizzBuzz Challenge</a></li>
+                          <li><a href="content/coding-challenges/rosetta-code.md">Rosetta Code Problems</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="content-card">
+                      <h3><span class="emoji">💼</span>Interview Questions</h3>
+                      <ul>
+                          <li><a href="content/interview-questions/personal-development.md">Personal Development</a></li>
+                          <li><a href="content/interview-questions/technical.md">Technical Questions</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="content-card">
+                      <h3><span class="emoji">🔒</span>Web Security</h3>
+                      <ul>
+                          <li><a href="content/web-security/xss-prevention.md">XSS Prevention</a></li>
+                          <li><a href="content/web-security/sql-injection.md">SQL Injection Prevention</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="content-card">
+                      <h3><span class="emoji">🛠️</span>Development Practices</h3>
+                      <ul>
+                          <li><a href="content/development-practices/tdd.md">Test Driven Development</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="content-card">
+                      <h3><span class="emoji">📚</span>Resources</h3>
+                      <ul>
+                          <li><a href="resources/external-links.md">External Links & References</a></li>
+                          <li><a href="docs/projectplan.md">Project Plan</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="content-card">
+                      <h3><span class="emoji">📖</span>Getting Started</h3>
+                      <ul>
+                          <li><a href="README.md">Project Overview</a></li>
+                          <li><a href="docs/phase1-completion.md">Phase 1 Completion</a></li>
+                      </ul>
+                  </div>
+              </div>
+              
+              <div class="footer">
+                  <p>🌟 Star this repository on <a href="https://github.com/hkevin01/Common-Questions">GitHub</a></p>
+                  <p>Last updated: $(date)</p>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          # Create a simple CSS file for markdown rendering
+          cat > _site/style.css << 'EOF'
+          body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              line-height: 1.6;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+              color: #333;
+          }
+          pre {
+              background: #f4f4f4;
+              padding: 15px;
+              border-radius: 5px;
+              overflow-x: auto;
+          }
+          code {
+              background: #f4f4f4;
+              padding: 2px 4px;
+              border-radius: 3px;
+          }
+          blockquote {
+              border-left: 4px solid #ddd;
+              margin: 0;
+              padding-left: 20px;
+              color: #666;
+          }
+          table {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 20px 0;
+          }
+          th, td {
+              border: 1px solid #ddd;
+              padding: 12px;
+              text-align: left;
+          }
+          th {
+              background: #f8f9fa;
+              font-weight: 600;
+          }
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
