@@ -30,31 +30,48 @@ def check_internal_links():
             errors.append(f"Error reading {md_file}: {e}")
             continue
 
-        for match in re.finditer(link_pattern, content):
-            link_url = match.group(2)
-
-            # Skip external links
-            if link_url.startswith(('http://', 'https://', 'mailto:')):
+        # Track if we're inside code blocks
+        lines = content.split('\n')
+        in_code_block = False
+        
+        for line_num, line in enumerate(lines):
+            # Toggle code block state
+            if line.strip().startswith('```'):
+                in_code_block = not in_code_block
+                continue
+                
+            # Skip lines in code blocks
+            if in_code_block:
+                continue
+                
+            # Skip indented code blocks (4+ spaces or tab)
+            if line.startswith('    ') or line.startswith('\t'):
                 continue
 
-            # Check if internal file exists
-            if link_url.startswith('/'):
-                # Absolute link from root
-                target_path = current_dir / link_url.lstrip('/')
-            else:
-                # Relative link
-                target_path = md_file.parent / link_url
+            for match in re.finditer(link_pattern, line):
+                link_url = match.group(2)
 
-            # Remove anchor fragments for file checking
-            file_path = str(target_path).split('#')[0]
-            target_file = Path(file_path)
+                # Skip external links and anchors
+                if link_url.startswith(('http://', 'https://', 'mailto:', '#')):
+                    continue
 
-            if not target_file.exists():
-                line_num = content[:match.start()].count('\n') + 1
-                errors.append(
-                    f"{md_file}:{line_num}: "
-                    f"Broken link '{link_url}' -> {target_file}"
-                )
+                # Check if internal file exists
+                if link_url.startswith('/'):
+                    # Absolute link from root
+                    target_path = current_dir / link_url.lstrip('/')
+                else:
+                    # Relative link
+                    target_path = md_file.parent / link_url
+
+                # Remove anchor fragments for file checking
+                file_path = str(target_path).split('#')[0]
+                target_file = Path(file_path)
+
+                if not target_file.exists():
+                    errors.append(
+                        f"{md_file}:{line_num + 1}: "
+                        f"Broken link '{link_url}' -> {target_file}"
+                    )
 
     if errors:
         print("❌ Internal Link Errors:")

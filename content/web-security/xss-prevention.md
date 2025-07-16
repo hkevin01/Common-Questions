@@ -260,15 +260,12 @@ function SafeHTMLComponent({ htmlContent }) {
 **Django Protection**:
 ```python
 # Django templates auto-escape by default
-# template.html
-<p>{{ user_input }}</p>  <!-- Automatically escaped -->
+# template.html: {{ user_input }}  <!-- Automatically escaped -->
 
-# To output raw HTML (dangerous)
-<p>{{ user_input|safe }}</p>
+# To output raw HTML (dangerous): {{ user_input|safe }}
 
 # Safe way to output user HTML
 from django.utils.html import escape
-<p>{{ user_input|escape }}</p>
 
 # In views
 def display_content(request):
